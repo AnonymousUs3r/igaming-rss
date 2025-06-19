@@ -1,0 +1,35 @@
+name: Auto Update RSS Feed
+
+on:
+  schedule:
+    - cron: '0 */12 * * *'  # Runs every 12 hours
+  workflow_dispatch:      # Allows manual trigger via GitHub
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run RSS generator script
+        run: python igaming_rss_edge.py
+
+      - name: Commit and push updated feed
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "actions@github.com"
+          git add igamingontario_feed_v2.xml
+          git commit -m "⏰ Auto-update RSS feed" || echo "No changes to commit"
+          git push
