@@ -10,11 +10,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo on main
+      - name: Checkout repo
         uses: actions/checkout@v4
         with:
           ref: main
-          fetch-depth: 0  # full history for accurate git diff
+          fetch-depth: 0  # ensures commit history is available for diffs
+
+      - name: Switch to main branch (ensure we’re not detached)
+        run: git checkout main
 
       - name: Set up Python
         uses: actions/setup-python@v5
