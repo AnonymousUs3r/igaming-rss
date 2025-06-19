@@ -32,9 +32,12 @@ jobs:
           git config --global user.email "actions@github.com"
           git add igamingontario_feed_v2.xml
 
-          if git diff --cached --quiet; then
-            echo "🟡 No changes to commit"
-          else
+          CHANGED=$(git diff --cached --quiet || echo "yes")
+
+          if [ "$CHANGED" = "yes" ]; then
+            echo "✅ Feed changed — committing and pushing"
             git commit -m "⏰ Auto-update RSS feed"
             git push
+          else
+            echo "🟡 No changes to commit — skipping push"
           fi
