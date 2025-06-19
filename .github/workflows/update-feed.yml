@@ -2,7 +2,7 @@ name: Auto Update RSS Feed
 
 on:
   schedule:
-    - cron: '0 */12 * * *'  # Every 12 hours
+    - cron: '0 */12 * * *'  # Every 12 hours (00:00 & 12:00 UTC)
   workflow_dispatch:
 
 jobs:
@@ -37,7 +37,7 @@ jobs:
           if [ "$CHANGED" = "yes" ]; then
             echo "✅ Feed changed — committing and pushing"
             git commit -m "⏰ Auto-update RSS feed"
-            git push
+            git push origin HEAD:main
           else
             echo "🟡 No changes to commit — skipping push"
           fi
