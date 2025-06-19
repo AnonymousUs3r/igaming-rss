@@ -64,5 +64,5 @@ for item in items:
     entry.pubDate(pub_date.astimezone(timezone.utc))
 
 # 6. Save RSS to XML
-fg.rss_file("igamingontario_feed.xml")
-print("✅ RSS feed created with article links and dates: igamingontario_feed.xml")
+fg.rss_file("igamingontario_feed_v2.xml")
+print("✅ RSS feed created with article links and dates: igamingontario_feed_v2.xml")
