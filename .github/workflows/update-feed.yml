@@ -2,8 +2,8 @@ name: Auto Update RSS Feed
 
 on:
   schedule:
-    - cron: '0 */12 * * *'  # Every 12 hours (00:00 & 12:00 UTC)
-  workflow_dispatch:        # Allows manual trigger
+    - cron: '0 */12 * * *'  # Every 12 hours: 00:00 & 12:00 UTC
+  workflow_dispatch:        # Manual trigger available
 
 jobs:
   build:
@@ -31,5 +31,9 @@ jobs:
           git config --global user.name "github-actions"
           git config --global user.email "actions@github.com"
           git add igamingontario_feed_v2.xml
-          git diff --cached --quiet && echo "🟡 No changes to commit" || git commit -m "⏰ Auto-update RSS feed"
-          git push
+          if git diff --cached --quiet; then
+            echo "🟡 No changes to commit"
+          else
+            git commit -m "⏰ Auto-update RSS feed"
+            git push
+          fi
