@@ -30,7 +30,7 @@ for attempt in range(1, max_attempts + 1):
         print(f"🌐 Attempt {attempt}: Loading {url}")
         driver.get(url)
 
-        # Wait for articles to load
+        # Wait for article content to appear
         WebDriverWait(driver, 15).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, "div.view-content .views-row"))
         )
@@ -73,7 +73,7 @@ for article in articles:
 
         entry = fg.add_entry()
         entry.id(link)
-        entry.guid(link, permalink=True)  # ensure unique ID for readers
+        entry.guid(link, permalink=True)  # ✅ prevents duplicate entries
         entry.title(title)
         entry.link(href=link)
         entry.pubDate(pub_date)
