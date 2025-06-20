@@ -1,68 +1,72 @@
+import sys
+import time
+import requests
+from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.edge.options import Options
 from selenium.webdriver.edge.service import Service as EdgeService
-from webdriver_manager.microsoft import EdgeChromiumDriverManager
-from bs4 import BeautifulSoup
+from selenium.common.exceptions import TimeoutException, WebDriverException
 from feedgen.feed import FeedGenerator
-from datetime import datetime, timezone
-from dateutil import parser
-import time
+from datetime import datetime
 
-# 1. Set up headless Edge
+# --- Setup Microsoft Edge in headless mode ---
 options = Options()
 options.use_chromium = True
 options.add_argument("--headless")
 options.add_argument("--disable-gpu")
 options.add_argument("--no-sandbox")
 
-service = EdgeService(EdgeChromiumDriverManager().install())
-driver = webdriver.Edge(service=service, options=options)
+driver = webdriver.Edge(service=EdgeService(), options=options)
 
-# 2. Load the news page
+# --- Load page with retry logic ---
 url = "https://igamingontario.ca/en/news"
-base_url = "https://igamingontario.ca"
-driver.get(url)
-time.sleep(5)  # Wait for JS-rendered content
+max_attempts = 2
+success = False
+driver.set_page_load_timeout(30)
 
-# 3. Parse the page content
-soup = BeautifulSoup(driver.page_source, "html.parser")
-driver.quit()
-
-# 4. Extract article blocks
-items = soup.find_all("div", class_="views-row")
-
-# 5. Generate RSS feed
-fg = FeedGenerator()
-fg.title("iGaming Ontario News")
-fg.link(href=url)
-fg.description("Latest updates from iGaming Ontario")
-
-for item in items:
-    text = item.get_text(separator=" ", strip=True)
-    if not text or len(text) < 30:
-        continue
-
-    # Extract article URL
-    link_tag = item.find("a", href=True)
-    if link_tag:
-        full_link = base_url + link_tag["href"]
-    else:
-        full_link = url
-
-    # Try to parse date from beginning of text
-    split = text.split(" ", 3)
-    possible_date = " ".join(split[:3])
+for attempt in range(1, max_attempts + 1):
     try:
-        pub_date = parser.parse(possible_date)
-    except Exception:
-        pub_date = datetime.now(timezone.utc)
+        print(f"🌐 Attempt {attempt}: Loading {url}")
+        driver.get(url)
+        success = True
+        break
+    except (TimeoutException, WebDriverException) as e:
+        print(f"⚠️ Attempt {attempt} failed: {e}")
+        time.sleep(5)
 
-    entry = fg.add_entry()
-    entry.title(text)
-    entry.link(href=full_link)
-    entry.description(text)
-    entry.pubDate(pub_date.astimezone(timezone.utc))
+if not success:
+    print(f"❌ Failed to load {url} after {max_attempts} attempts.")
+    driver.quit()
+    sys.exit(0)
 
-# 6. Save RSS to XML
-fg.rss_file("igamingontario_feed_v2.xml")
-print("✅ RSS feed created with article links and dates: igamingontario_feed_v2.xml")
+# --- Scrape and build RSS feed ---
+html = driver.page_source
+driver.quit()
+soup = BeautifulSoup(html, "html.parser")
+
+fg = FeedGenerator()
+fg.id(url)
+fg.title("iGaming Ontario News")
+fg.link(href=url, rel="alternate")
+fg.language("en")
+
+articles = soup.select("div.view-content .views-row")
+for article in articles:
+    link_tag = article.select_one("a")
+    date_tag = article.select_one("span.date-display-single")
+    title_tag = article.select_one("div.field-content")
+
+    if link_tag and date_tag and title_tag:
+        link = "https://igamingontario.ca" + link_tag.get("href")
+        title = title_tag.get_text(strip=True)
+        pub_date = datetime.strptime(date_tag.get_text(strip=True), "%B %d, %Y")
+
+        entry = fg.add_entry()
+        entry.id(link)
+        entry.title(title)
+        entry.link(href=link)
+        entry.pubDate(pub_date)
+
+filename = sys.argv[1] if len(sys.argv) > 1 else "igamingontario_feed_v2.xml"
+fg.rss_file(filename)
+print(f"✅ RSS feed written to {filename}")
