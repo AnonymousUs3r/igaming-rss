@@ -48,6 +48,7 @@ fg = FeedGenerator()
 fg.id(url)
 fg.title("iGaming Ontario News")
 fg.link(href=url, rel="alternate")
+fg.description("Latest news from iGaming Ontario")
 fg.language("en")
 
 articles = soup.select("div.view-content .views-row")
