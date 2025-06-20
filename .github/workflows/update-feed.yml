@@ -1,8 +1,8 @@
-name: Auto Update RSS Feed
+name: Auto Update iGaming RSS Feed
 
 on:
   schedule:
-    - cron: '0 */12 * * *'  # Every 12 hours (00:00 & 12:00 UTC)
+    - cron: '0 */12 * * *'  # Every 12 hours
   workflow_dispatch:
 
 jobs:
@@ -14,10 +14,17 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: main
-          fetch-depth: 0  # ensures commit history is available for diffs
+          fetch-depth: 0
 
-      - name: Switch to main branch (ensure we’re not detached)
+      - name: Switch to main branch
         run: git checkout main
+
+      - name: Install Microsoft Edge & WebDriver
+        run: |
+          sudo apt update
+          sudo apt install -y microsoft-edge-stable
+          sudo apt install -y msedgedriver
+          echo "✅ Edge installed"
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -30,18 +37,23 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run RSS generator script
-        run: python igaming_rss_edge.py
+        run: python igaming_rss_edge.py igamingontario_feed_v2.xml
 
-      - name: Commit and push only if feed changed
+      - name: Commit and push only if feed content changed
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "actions@github.com"
-          git add igamingontario_feed_v2.xml
 
-          if git diff --cached --quiet; then
-            echo "🟡 No changes to commit — skipping push"
-          else
-            echo "✅ Changes detected — committing and pushing"
-            git commit -m "⏰ Auto-update RSS feed"
-            git push origin main
+          if [ ! -f igamingontario_feed_v2.xml ]; then
+            echo "❌ RSS file not found. Skipping commit."
+            exit 0
           fi
+
+          if git diff --quiet --exit-code igamingontario_feed_v2.xml; then
+            echo "🟡 No content changes — skipping commit"
+            exit 0
+          fi
+
+          git add igamingontario_feed_v2.xml
+          git commit -m "⏰ Auto-update iGaming feed"
+          git push origin main
