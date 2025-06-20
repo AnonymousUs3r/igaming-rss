@@ -8,7 +8,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from feedgen.feed import FeedGenerator
-from datetime import datetime
+from datetime import datetime, timezone
 
 # --- Setup Chrome headless ---
 options = Options()
