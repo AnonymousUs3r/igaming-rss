@@ -3,20 +3,21 @@ import time
 import requests
 from bs4 import BeautifulSoup
 from selenium import webdriver
-from selenium.webdriver.edge.options import Options
-from selenium.webdriver.edge.service import Service as EdgeService
+from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import TimeoutException, WebDriverException
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from feedgen.feed import FeedGenerator
 from datetime import datetime
 
-# --- Setup Microsoft Edge in headless mode ---
+# --- Setup Chrome headless ---
 options = Options()
-options.use_chromium = True
 options.add_argument("--headless")
 options.add_argument("--disable-gpu")
 options.add_argument("--no-sandbox")
 
-driver = webdriver.Edge(service=EdgeService(), options=options)
+driver = webdriver.Chrome(options=options)
 
 # --- Load page with retry logic ---
 url = "https://igamingontario.ca/en/news"
@@ -28,8 +29,14 @@ for attempt in range(1, max_attempts + 1):
     try:
         print(f"🌐 Attempt {attempt}: Loading {url}")
         driver.get(url)
+
+        # Wait up to 15s for articles to be present
+        WebDriverWait(driver, 15).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "div.view-content .views-row"))
+        )
         success = True
         break
+
     except (TimeoutException, WebDriverException) as e:
         print(f"⚠️ Attempt {attempt} failed: {e}")
         time.sleep(5)
@@ -52,6 +59,8 @@ fg.description("Latest news from iGaming Ontario")
 fg.language("en")
 
 articles = soup.select("div.view-content .views-row")
+print(f"🧪 Found {len(articles)} articles")
+
 for article in articles:
     link_tag = article.select_one("a")
     date_tag = article.select_one("span.date-display-single")
