@@ -29,7 +29,6 @@ for attempt in range(1, max_attempts + 1):
         print(f"🌐 Attempt {attempt}: Loading {url}")
         driver.get(url)
 
-        # Wait for articles to appear
         WebDriverWait(driver, 15).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, "div.view-content .views-row"))
         )
@@ -61,13 +60,13 @@ print(f"🧪 Found {len(articles)} articles")
 
 added = 0
 for article in articles:
-    link_tag = article.select_one("a")
-    date_tag = article.select_one("span.date-display-single")
+    link_tag = article.select_one("h3.views-field-title a")
+    date_tag = article.select_one("time.datetime")
 
     if link_tag and date_tag:
         link = "https://igamingontario.ca" + link_tag.get("href")
         title = link_tag.get_text(strip=True)
-        pub_date = datetime.strptime(date_tag.get_text(strip=True), "%B %d, %Y")
+        pub_date = datetime.strptime(date_tag["datetime"], "%Y-%m-%dT%H:%M:%SZ")
 
         entry = fg.add_entry()
         entry.id(link)
@@ -84,6 +83,6 @@ for article in articles:
 
 print(f"📦 Total entries added to feed: {added}")
 
-filename = sys.argv[1] if len(sys.argv) > 1 else "igamingontario_feed_v2.xml"
+filename = sys.argv[1] if len(sys.argv) > 1 else "igamingontario_feed_v3.xml"
 fg.rss_file(filename)
 print(f"✅ RSS feed written to {filename}")
