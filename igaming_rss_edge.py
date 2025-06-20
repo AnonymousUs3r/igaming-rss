@@ -30,13 +30,12 @@ for attempt in range(1, max_attempts + 1):
         print(f"🌐 Attempt {attempt}: Loading {url}")
         driver.get(url)
 
-        # Wait up to 15s for articles to be present
+        # Wait for articles to load
         WebDriverWait(driver, 15).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, "div.view-content .views-row"))
         )
         success = True
         break
-
     except (TimeoutException, WebDriverException) as e:
         print(f"⚠️ Attempt {attempt} failed: {e}")
         time.sleep(5)
@@ -61,6 +60,7 @@ fg.language("en")
 articles = soup.select("div.view-content .views-row")
 print(f"🧪 Found {len(articles)} articles")
 
+added = 0
 for article in articles:
     link_tag = article.select_one("a")
     date_tag = article.select_one("span.date-display-single")
@@ -73,9 +73,17 @@ for article in articles:
 
         entry = fg.add_entry()
         entry.id(link)
+        entry.guid(link, permalink=True)  # ensure unique ID for readers
         entry.title(title)
         entry.link(href=link)
         entry.pubDate(pub_date)
+
+        print(f"✅ Added article: {title}")
+        added += 1
+    else:
+        print("⚠️ Skipped article: missing tag(s)")
+
+print(f"📦 Total entries added to feed: {added}")
 
 filename = sys.argv[1] if len(sys.argv) > 1 else "igamingontario_feed_v2.xml"
 fg.rss_file(filename)
