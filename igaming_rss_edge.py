@@ -1,6 +1,5 @@
 import sys
 import time
-import requests
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -30,7 +29,7 @@ for attempt in range(1, max_attempts + 1):
         print(f"🌐 Attempt {attempt}: Loading {url}")
         driver.get(url)
 
-        # Wait for article content to appear
+        # Wait for articles to appear
         WebDriverWait(driver, 15).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, "div.view-content .views-row"))
         )
@@ -64,16 +63,15 @@ added = 0
 for article in articles:
     link_tag = article.select_one("a")
     date_tag = article.select_one("span.date-display-single")
-    title_tag = article.select_one("div.field-content")
 
-    if link_tag and date_tag and title_tag:
+    if link_tag and date_tag:
         link = "https://igamingontario.ca" + link_tag.get("href")
-        title = title_tag.get_text(strip=True)
+        title = link_tag.get_text(strip=True)
         pub_date = datetime.strptime(date_tag.get_text(strip=True), "%B %d, %Y")
 
         entry = fg.add_entry()
         entry.id(link)
-        entry.guid(link, permalink=True)  # ✅ prevents duplicate entries
+        entry.guid(link, permalink=True)
         entry.title(title)
         entry.link(href=link)
         entry.pubDate(pub_date)
@@ -81,7 +79,8 @@ for article in articles:
         print(f"✅ Added article: {title}")
         added += 1
     else:
-        print("⚠️ Skipped article: missing tag(s)")
+        print("⚠️ Skipped article: missing link or date")
+        print(article.prettify()[:300])
 
 print(f"📦 Total entries added to feed: {added}")
 
