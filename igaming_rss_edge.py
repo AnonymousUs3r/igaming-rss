@@ -66,7 +66,7 @@ for article in articles:
     if link_tag and date_tag:
         link = "https://igamingontario.ca" + link_tag.get("href")
         title = link_tag.get_text(strip=True)
-        pub_date = datetime.strptime(date_tag["datetime"], "%Y-%m-%dT%H:%M:%SZ")
+        pub_date = datetime.strptime(date_tag["datetime"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
 
         entry = fg.add_entry()
         entry.id(link)
