@@ -6,18 +6,15 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  update-feed:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           ref: main
           fetch-depth: 0
-
-      - name: Switch to main branch
-        run: git checkout main
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -30,23 +27,25 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run RSS generator script
-        run: python igaming_rss_edge.py igamingontario_feed_v3.xml
+        run: |
+          echo "📡 Generating iGamingOntario feed..."
+          python igaming_rss_edge.py igamingontario_feed_v3.xml
 
-      - name: Commit and push only if feed content changed
+      - name: Commit and push changes if feed updated
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "actions@github.com"
 
           if [ ! -f igamingontario_feed_v3.xml ]; then
             echo "❌ RSS file not found. Skipping commit."
-            exit 0
+            exit 1
           fi
 
           if git diff --quiet --exit-code igamingontario_feed_v3.xml; then
-            echo "🟡 No content changes — skipping commit"
+            echo "🟡 No changes in feed — skipping commit"
             exit 0
           fi
 
           git add igamingontario_feed_v3.xml
           git commit -m "⏰ Auto-update iGaming feed (v3)"
-          git push origin main
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:main
